@@ -1,0 +1,42 @@
+---
+# slurmdbd server must be configured first
+- hosts: host1
+  vars:
+    slurm_roles: ['dbd']
+  roles:
+    - slurm
+
+# ... then the slurmctl server
+- hosts: host2
+  vars:
+    slurm_roles: ['ctl']
+    slurm_nodes:
+      - name: "host3"
+    slurm_partitions:
+      - name: "COH"
+        Nodes: "host3"
+        Default: "yes"
+    slurm_config:
+      AccountingStorageHost: host1
+      ControlMachine: host2
+  roles:
+    - slurm
+
+# ... finally the compute nodes.
+# Note they must have the same slurm config as the controller. One way is is to put
+# all the slurm hosts in an inventory group and put the slurm config in group_vars.
+# Another way is to use the same var_files
+- hosts: host3
+  vars:
+    slurm_roles: ['node']
+    slurm_nodes:
+      - name: "host3"
+    slurm_partitions:
+      - name: "COH"
+        Nodes: "host3"
+        Default: "yes"
+    slurm_config:
+      AccountingStorageHost: host1
+      ControlMachine: host2
+  roles:
+    - slurm

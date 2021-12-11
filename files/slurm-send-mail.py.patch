@@ -1,0 +1,40 @@
+diff --git a/bin/slurm-send-mail.py b/bin/slurm-send-mail.py
+index d9f6e7f..ec96f6f 100755
+--- a/bin/slurm-send-mail.py
++++ b/bin/slurm-send-mail.py
+@@ -206,7 +206,7 @@ def process_spool_file(f: pathlib.Path, first_job_id: int, state: str):
+         cmd = (
+             "{0} -j {1} -p -n --fields=JobId,Partition,JobName,Start,End,"
+             "State,nnodes,WorkDir,Elapsed,ExitCode,Comment,Cluster,User,"
+-            "NodeList,TimeLimit,TimelimitRaw,JobIdRaw".format(
++            "NodeList,TimeLimit,JobIdRaw".format(
+                 sacct_exe, first_job_id
+             )
+         )
+@@ -219,7 +219,7 @@ def process_spool_file(f: pathlib.Path, first_job_id: int, state: str):
+             logging.debug(stdout)
+             for line in stdout.split("\n"):
+                 data = line.split('|')
+-                if len(data) != 18:
++                if len(data) != 17:
+                     continue
+
+                 if not re.match(r"^([0-9]+|[0-9]+_[0-9]+)$", data[0]):
+@@ -228,7 +228,7 @@ def process_spool_file(f: pathlib.Path, first_job_id: int, state: str):
+                 if "{0}".format(first_job_id) not in data[0]:
+                     continue
+
+-                job_id = int(data[16])
++                job_id = int(data[15])
+                 if "_" in data[0]:
+                     job = Job(job_id, data[0].split("_")[0])
+                 else:
+@@ -468,6 +468,7 @@ if __name__ == "__main__":
+         log_level = logging.DEBUG
+     else:
+         log_level = logging.INFO
++    log_level = logging.DEBUG
+
+     if log_file and log_file.is_file():
+         logging.basicConfig(
+

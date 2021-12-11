@@ -1,0 +1,5 @@
+---
+- name: Configure host as a single-node slurm cluster
+  hosts: host
+  roles:
+    - andbanman.slurm

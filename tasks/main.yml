@@ -1,0 +1,43 @@
+---
+- name: Load OS specific variables
+  tags: [slurm]
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - '{{ ansible_distribution }}.yml'
+        - '{{ ansible_os_family }}.yml'
+      paths:
+        - 'vars'
+
+- name: Include OS specific tasks
+  tags: [slurm]
+  when: "ansible_os_family == 'RedHat'"
+  include_tasks: RedHat.yml
+
+#
+# These should be run in order, otherwise the services will not start
+#
+- name: Include munge tasks
+  tags: [slurm, munge]
+  import_tasks: munge.yml
+
+- name: Include dbd installation tasks
+  tags: [slurm, slurmdbd]
+  when: "'dbd' in slurm_roles"
+  import_tasks: slurmdbd.yml
+
+- name: Include controller installation tasks
+  tags: [slurm, slurmctld]
+  when: "'ctl' in slurm_roles"
+  import_tasks: slurmctld.yml
+
+- name: Include node installation tasks
+  tags: [slurm, slurmd]
+  when: "'node' in slurm_roles"
+  import_tasks: slurmd.yml
+
+- name: Include slurm-client installation tasks
+  tags: [slurm, slurm-client]
+  when: "'dbd' not in slurm_roles and 'ctl' not in slurm_roles and 'node' not in slurm_roles"
+  import_tasks: slurm-client.yml

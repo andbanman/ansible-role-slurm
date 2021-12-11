@@ -1,0 +1,46 @@
+---
+
+- name: reload slurmd
+  service:
+    name: "{{ slurm_slurmd_service_name }}"
+    state: reloaded
+  when: "'slurmexechosts' in group_names or 'exec' in slurm_roles"
+
+- name: restart slurmd
+  service:
+    name: "{{ slurm_slurmd_service_name }}"
+    state: restarted
+  when: "'slurmexechosts' in group_names or 'exec' in slurm_roles"
+  #TODO: drain nodes before restarting slurmd
+
+- name: reload slurmctld
+  service:
+    name: "{{ slurm_slurmctld_service_name }}"
+    state: reloaded
+  when: "'slurmservers' in group_names or 'controller' in slurm_roles"
+
+- name: restart slurmctld
+  service:
+    name: "{{ slurm_slurmctld_service_name }}"
+    state: restarted
+  when: "'slurmservers' in group_names or 'controller' in slurm_roles"
+
+- name: reload slurmdbd
+  service:
+    name: "{{ slurm_slurmdbd_service_name }}"
+    state: reloaded
+  when: "'slurmdbdservers' in group_names or 'dbd' in slurm_roles"
+
+- name: restart munge
+  service:
+    name: "{{ slurm_munge_service_name }}"
+    state: restarted
+
+- name: restart mysql
+  service:
+    name: "{{ slurm_mysql_service_name }}"
+    state: restarted
+
+# reconfigure slurm without restarting services
+- name: scontrol reconfigure
+  command: "scontrol reconfigure"

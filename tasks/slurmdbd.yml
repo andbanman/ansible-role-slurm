@@ -1,0 +1,61 @@
+---
+# TODO switch to MariaDB for redhat support
+- name: Configure MYSQL
+  block:
+  - name: Install MySQL packages
+    package:
+      name: "{{ slurm_packages.mysql}}"
+      state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+  - name: Start MYSQL service
+    service:
+      name: mysql
+      state: started
+  # https://slurm.schedmd.com/accounting.html
+  #- name: Create Slurm database
+  #  mysql_db:
+  #    name: 'slurm_acct_db'
+  #    state: present
+  - name: Create Slurm user for SQL database
+    mysql_user:
+      name: "{{ slurm_user_name }}"
+      host: localhost
+      priv: 'slurm_acct_db.*:ALL'
+      state: present
+    notify:
+      - restart mysql
+
+- name: Install Slurm DB packages
+  package:
+    name: "{{ slurm_packages.slurmdbd }}"
+    state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+
+- name: Install slurmdbd.conf
+  template:
+    src: generic.conf.j2
+    dest: "{{ slurm_config_dir }}/slurmdbd.conf"
+    owner: "{{ slurm_user_name }}"
+    group: root
+    mode: '0400'
+  with_items:
+    - name: slurmdbd.conf
+      config: __slurmdbd_config_merged
+  notify:
+    - reload slurmdbd
+
+- name: Create slurmdbd runtime directories
+  file:
+    path: "{{ item | dirname }}"
+    owner: "{{ slurm_user_name }}"
+    group: "{{ slurm_group_name }}"
+    mode: '0755'
+    state: directory
+  when: item != 'omit'
+  with_items:
+    - "{{ __slurmdbd_config_merged.LogFile }}"
+    - "{{ __slurmdbd_config_merged.PidFile }}"
+
+- name: Ensure slurmdbd is enabled and running
+  service:
+    name: "{{ slurm_slurmdbd_service_name }}"
+    enabled: yes
+    state: started

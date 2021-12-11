@@ -1,0 +1,108 @@
+---
+- name: Install Slurm controller packages
+  package:
+    name: "{{ slurm_packages.slurmctld }}"
+    state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+
+- name: Create slurm state directory
+  file:
+    path: "{{ __slurm_config_merged.StateSaveLocation }}"
+    owner: "{{ slurm_user_name }}"
+    group: "{{ slurm_group_name }}"
+    mode: '0700'
+    state: directory
+
+- name: Create slurmctld runtime directories
+  file:
+    path: "{{ item | dirname }}"
+    owner: "{{ slurm_user_name }}"
+    group: "{{ slurm_group_name }}"
+    mode: '0755'
+    state: directory
+  when: item != 'omit'
+  with_items:
+    - "{{ __slurm_config_merged.SlurmctldLogFile }}"
+    - "{{ __slurm_config_merged.SlurmctldPidFile }}"
+
+# TODO: check if these values changed and run appropriate handler
+#
+# "Slurm daemons should be shutdown and restarted if any of these parameters are
+# to be changed: AuthType, ControlMach, PluginDir, StateSaveLocation,
+# SlurmctldHost, SlurmctldPort, or SlurmdPort. The slurmctld daemon and all
+# slurmd daemons must be restarted if nodes are added to or removed from the
+# cluster."
+
+- name: Install slurm.conf
+  template:
+    src: "slurm.conf.j2"
+    dest: "{{ slurm_config_dir }}/slurm.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart slurmctld
+    #- scontrol reconfigure
+
+- name: Configure slurm-mail module
+  when: 'slurm_mail'
+  block:
+  - name: Install slurm-mail
+    copy:
+      src: slurm-mail
+      dest: "{{ slurm_mail_path }}"
+      mode: "0755"
+
+  # Note: may want to make the spool available to the backup server but that
+  # would cause duplicate emails - to avoid this we take the risk of dropped
+  # emails.
+  - name: Setup slurm-mail spool directory
+    file:
+      path: "{{ slurm_mail_spool_path }}"
+      owner: "{{ slurm_user_name }}"
+      group: "{{ slurm_user_name }}"
+      mode: '0700'
+      state: directory
+
+  - name: Setup slurm-mail log directory
+    file:
+      path: "{{ slurm_mail_log_path }}"
+      owner: "{{ slurm_user_name }}"
+      group: "{{ slurm_user_name }}"
+      mode: '0700'
+      state: directory
+
+  - name: Add slurm-mail cron job
+    cron:
+      cron_file: slurm-mail
+      user: "{{ slurm_user_name }}"
+      # note if name change then need to remove old entries by hand
+      name: "scrub-slurm-mail-spool"
+      month: "*"
+      day: "*"
+      hour: "*"
+      minute: "*"
+      job: "{{ slurm_mail_path }}/bin/slurm-send-mail.py"
+      state: present
+
+- name: Ensure slurmctld is enabled and running
+  service:
+    name: "{{ slurm_slurmctld_service_name }}"
+    enabled: yes
+    state: started
+
+# TODO, which host is this supposed to run on?
+- name: Register cluster with slurmdbd
+  block:
+  - name: Check list of clusters
+    command: bash -c 'sacctmgr list cluster -n -p | cut -f1 -d"|"'
+    register: cluster_list_results
+    changed_when: false
+  - name: Debug cluster_list_results
+    when: "'dbd' in slurm_roles"
+    debug:
+      msg: "{{ cluster_list_results.stdout }}"
+    ignore_errors: '{{ ansible_check_mode }}'
+  - name: Register cluster with SlurmDB
+    command: "sacctmgr -i add cluster {{ __slurm_config_merged.ClusterName }}"
+    when: "__slurm_config_merged.ClusterName not in cluster_list_results.stdout and __slurm_config_merged.ClusterName != cluster_list_results.stdout"
+    ignore_errors: '{{ ansible_check_mode }}'

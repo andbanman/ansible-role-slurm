@@ -1,0 +1,67 @@
+---
+slurm_upgrade: no
+slurm_roles: ['dbd','ctl','node']
+slurm_partitions:
+  - { name: "Local", Nodes: "localhost", Default: "YES"}
+slurm_nodes:
+  - { name: "localhost" }
+#slurm_config
+
+slurm_create_dirs: True
+slurm_configure_munge: yes
+slurm_slurmd_service_name: slurmd
+slurm_slurmctld_service_name: slurmctld
+slurm_slurmdbd_service_name: slurmdbd
+slurm_munge_service_name: munge
+slurm_mysql_service_name: mysql
+slurm_user_name: "slurm"
+slurm_group_name: "slurm"
+#slurm_user # dictionary matching ansible.builtin.user
+slurm_munge_key_file: "/etc/munge/munge.key"
+slurm_munge_key: "01234569ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+__slurm_config_default:
+  AuthType: auth/munge
+  CryptoType: crypto/munge
+  SlurmUser: "{{ slurm_user_name }}"
+  ClusterName: cluster
+  # default is proctrack/cgroup which is the best but also less than 100% chance of working e.g. in docker
+  ProctrackType: proctrack/cgroup
+  # Mail
+  MailProg: "{{ (slurm_mail_path + '/bin/slurm-spool-mail.py') if slurm_mail else 'omit' }}"
+  # slurmctld options
+  SlurmctldPort: 6817
+  SlurmctldLogFile: "{{ slurm_slurmctld_log_file }}"
+  SlurmctldPidFile: "{{ slurm_slurmctld_pid_file }}"
+  StateSaveLocation: "{{ slurm_slurmctld_savestate_path }}"
+  # slurmd options
+  SlurmdPort: 6818
+  SlurmdLogFile: "{{ slurm_slurmd_log_file }}"
+  SlurmdPidFile: "{{ slurm_slurmd_pid_file }}"
+  SlurmdSpoolDir: "{{ slurm_slurmd_spool_dir }}"
+  # Database configuration
+  AccountingStorageType: accounting_storage/slurmdbd
+  #AccountingStorageHost: should be the slurmdbd host
+  JobAcctGatherType: jobacct_gather/linux
+__slurm_config_merged: "{{ __slurm_config_default | combine(slurm_config | default({})) }}"
+
+__slurm_cgroup_config_default:
+  CgroupMountpoint: /sys/fs/cgroup
+__slurm_cgroup_config_merged: "{{ __slurm_cgroup_config_default | combine(slurm_cgroup_config | default({})) }}"
+
+__slurmdbd_config_default:
+  AuthType: auth/munge
+  DbdPort: 6819
+  SlurmUser: "{{ slurm_user_name }}"
+  PidFile: "{{ slurm_slurmdbd_pid_file }}"
+  LogFile: "{{ slurm_slurmdbd_log_file }}"
+  StorageType: 'accounting_storage/mysql'
+__slurmdbd_config_merged: "{{ __slurmdbd_config_default | combine(slurmdbd_config | default({})) }}"
+
+# slurm-mail configuration
+slurm_mail: False
+slurm_mail_path: '/opt/slurm-mail'
+slurm_mail_repo: 'https://github.com/neilmunday/slurm-mail.git'
+slurm_mail_version: '2.1'
+slurm_mail_log_path: '/var/log/slurm-mail'
+slurm_mail_spool_path: '/var/spool/slurm-mail'

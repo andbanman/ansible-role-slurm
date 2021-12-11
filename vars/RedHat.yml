@@ -1,0 +1,19 @@
+---
+slurm_config_dir: '/etc/slurm'
+slurm_log_dir: '/var/log/slurm'
+slurm_slurmdbd_log_file: '/var/log/slurm/slurmdbd.log'
+slurm_slurmdbd_pid_file: '/var/run/slurm/slurmdbd.pid'
+slurm_slurmctld_log_file: '/var/log/slurm/slurmctld.log'
+slurm_slurmctld_pid_file: '/var/run/slurm/slurmctld.pid'
+slurm_slurmctld_savestate_path: '/var/lib/slurm/slurmctld'
+slurm_slurmd_log_file: '/var/log/slurm/slurmd.log'
+slurm_slurmd_pid_file: '/var/pid/slurm/slurmd.pid'
+slurm_slurmd_spool_dir: '/var/spool/slurm/slurmd'
+slurm_packages:
+  client:    [slurm]
+  slurmctld: [slurm, slurm-slurmctld]
+  slurmd:    [slurm, slurm-slurmd]
+  slurmdbd:  [slurm-slurmdbd]
+  # TODO: redhat no longer ships mysql, switch to MariaDB
+  mysql: [mysql-server, mysql-python]
+  munge: [munge]

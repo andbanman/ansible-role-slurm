@@ -1,0 +1,24 @@
+##
+# Slurm Logrotate Configuration
+##
+# TODO: this ignores the actual *LogFile values
+{{ slurm_log_dir }}/*.log {
+	compress
+	missingok
+	nocopytruncate
+	nocreate
+	nodelaycompress
+	nomail
+	notifempty
+	noolddir
+	rotate 5
+	sharedscripts
+	size=32M
+	create 640 slurm root
+	postrotate
+		for daemon in $(/usr/bin/scontrol show daemons)
+		do
+			killall -SIGUSR2 $daemon
+		done
+	endscript
+}

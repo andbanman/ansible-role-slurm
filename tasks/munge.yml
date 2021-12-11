@@ -1,0 +1,38 @@
+---
+- name: Install munge packages
+  package:
+    name: "{{ slurm_packages.munge }}"
+    state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+
+- name: Check munge dir
+  file:
+    path: /etc/munge
+    owner: munge
+    group: munge
+    mode: '0700'
+    state: directory
+
+- name: Install munge key
+  no_log: True
+  copy:
+    content: "{{ slurm_munge_key }}"
+    dest: "{{ slurm_munge_key_file }}"
+    owner: munge
+    group: munge
+    mode: '0400'
+  register:
+    munge_key
+
+# this needs to happen immediately for later services to operate correctly
+- name: Restart munge
+  when: munge_key.changed
+  service:
+    name: "{{ slurm_munge_service_name }}"
+    enabled: yes
+    state: restarted
+
+- name: Ensure munge is enabled and running
+  service:
+    name: "{{ slurm_munge_service_name }}"
+    enabled: yes
+    state: started

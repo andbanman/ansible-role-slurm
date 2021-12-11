@@ -1,0 +1,66 @@
+---
+- name: Install Slurm execution host packages
+  package:
+    name: "{{ slurm_packages.slurmd }}"
+    state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+
+- name: Create slurm spool directory
+  file:
+    path: "{{ __slurm_config_merged.SlurmdSpoolDir }}"
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  when: slurm_create_dirs
+  notify:
+    - reload slurmd
+
+- name: Create slurm log directory
+  file:
+    path: "{{ __slurm_config_merged.SlurmdLogFile | dirname }}"
+    owner: "{{ slurm_user_name }}"
+    group: "{{ slurm_group_name }}"
+    mode: '0755'
+    state: directory
+  when: slurm_create_dirs and __slurm_config_merged.SlurmdLogFile != omit
+
+- name: Create slurm config dir
+  file:
+    path: "{{ slurm_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Install extra execution host configs
+  template:
+    src: generic.conf.j2
+    dest: "{{ slurm_config_dir }}/{{ item.name }}"
+    mode: "0644"
+    backup: yes
+  with_items:
+    - name: cgroup.conf
+      config: __slurm_cgroup_config_merged
+  when: item.config in vars
+
+# TODO: check if these values changed and run appropriate handler
+#
+# "Slurm daemons should be shutdown and restarted if any of these parameters are
+# to be changed: AuthType, ControlMach, PluginDir, StateSaveLocation,
+# SlurmctldHost, SlurmctldPort, or SlurmdPort. The slurmctld daemon and all
+# slurmd daemons must be restarted if nodes are added to or removed from the
+# cluster."
+
+- name: Install slurm.conf
+  template:
+    src: "slurm.conf.j2"
+    dest: "{{ slurm_config_dir }}/slurm.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart slurmd
+
+- name: Ensure slurmd is enabled and running
+  service:
+    name: "{{ slurm_slurmd_service_name }}"
+    enabled: yes
+    state: started

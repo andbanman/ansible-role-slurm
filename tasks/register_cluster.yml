@@ -1,0 +1,25 @@
+---
+- name: Ensure slurmdbd is enabled and running
+  when: "'dbd' in slurm_roles"
+  service:
+    name: "{{ slurm_slurmdbd_service_name }}"
+    enabled: yes
+    state: started
+
+- name: Check list of clusters with SlurmDB
+  when: "'dbd' in slurm_roles"
+  command: bash -c 'sacctmgr list cluster -n -p | cut -f1 -d"|"'
+  register: cluster_list_results
+  changed_when: false
+
+- name: Debug cluster_list_results
+  when: "'dbd' in slurm_roles"
+  debug:
+    msg: "{{ cluster_list_results.stdout }}"
+  ignore_errors: '{{ ansible_check_mode }}'
+
+- name: Register cluster with SlurmDB
+  when: "'dbd' in slurm_roles"
+  command: "sacctmgr -i add cluster {{ __slurm_config_merged.ClusterName }}"
+  when: "__slurm_config_merged.ClusterName not in cluster_list_results.stdout and __slurm_config_merged.ClusterName != cluster_list_results.stdout"
+  ignore_errors: '{{ ansible_check_mode }}'

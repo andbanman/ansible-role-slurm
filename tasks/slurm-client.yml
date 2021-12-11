@@ -1,0 +1,15 @@
+---
+- name: Install Slurm client packages
+  package:
+    name: "{{ slurm_packages.client }}"
+    state: "{{ 'latest' if slurm_upgrade else 'present' }}"
+
+- name: Install slurm.conf
+  template:
+    src: "slurm.conf.j2"
+    dest: "{{ slurm_config_dir }}/slurm.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart slurmd
