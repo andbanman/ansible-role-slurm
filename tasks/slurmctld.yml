@@ -90,7 +90,6 @@
     enabled: yes
     state: started
 
-# TODO, which host is this supposed to run on?
 - name: Register cluster with slurmdbd
   block:
   - name: Check list of clusters
