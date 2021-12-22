@@ -37,4 +37,4 @@ MIT
 Author Information
 ------------------
 
-This role was written by [Andrew Banman](https://github.com/andbanman) while working as a DevOps engineer at Pacific Northwest Research Institute. This package was based on [galaxyproject/ansible-slurm](https://github.com/galaxyproject/ansible-slurm.git).
+This role was written by [Andrew Banman](https://github.com/andbanman) while working as a DevOps engineer at Pacific Northwest Research Institute. This role was based on [galaxyproject/ansible-slurm](https://github.com/galaxyproject/ansible-slurm.git).
