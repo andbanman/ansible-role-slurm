@@ -39,5 +39,5 @@
 
 - name: Include slurm-client installation tasks
   tags: [slurm, slurm-client]
-  when: "'dbd' not in slurm_roles and 'ctl' not in slurm_roles and 'node' not in slurm_roles"
+  when: "'login' in slurm_roles"
   import_tasks: slurm-client.yml

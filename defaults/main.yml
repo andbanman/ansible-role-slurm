@@ -1,6 +1,6 @@
 ---
 slurm_upgrade: no
-slurm_roles: ['dbd','ctl','node']
+slurm_roles: ['dbd','ctl','node','login']
 slurm_partitions:
   - { name: "Local", Nodes: "localhost", Default: "YES"}
 slurm_nodes:

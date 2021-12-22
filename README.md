@@ -9,8 +9,7 @@ Role Variables
 All variables are optional. If nothing is set, the role will install the Slurm client programs, munge, and create a `slurm.conf` with a single `localhost` node and `debug` partition. See the [defaults](defaults/main.yml) and [example playbooks](examples/) for examples.
 
 ```yaml
-slurm_roles: []         # Zero or more of 'ctl','dbd','node'; the default is all of the above.
-                        # Any other value implies a client, i.e. login, node.
+slurm_roles: []         # Zero or more of 'ctl','dbd','node','login'; the default is all of the above.
 
 slurm_config: {}        # Dictionary with keys matching slurm.conf fields. All of the slurm
                         # configuration is defined here except for Nodes and Partitions. Some
