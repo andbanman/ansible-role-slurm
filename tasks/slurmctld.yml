@@ -97,7 +97,6 @@
     register: cluster_list_results
     changed_when: false
   - name: Debug cluster_list_results
-    when: "'dbd' in slurm_roles"
     debug:
       msg: "{{ cluster_list_results.stdout }}"
     ignore_errors: '{{ ansible_check_mode }}'
